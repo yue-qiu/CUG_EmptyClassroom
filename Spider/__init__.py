@@ -58,6 +58,7 @@ class EmptyClassroomSpider:
             res = self.session.get(self.login_url)
         except Exception as e:
             logger.error(e)
+            print('Failure. Please check logging.log')
             exit(1)
 
         if '错误' in res.text and 'sfrz' in res.url:
@@ -139,14 +140,14 @@ class EmptyClassroomSpider:
 
         cur = db.cursor()
         del_table_sql = """drop table if exists empty_classroom"""
-        create_table_sql = """create table if not exists empty_classroom(
-        id int UNSIGNED primary key AUTO_INCREMENT,
-        date varchar(50),
-        WEEK INT,
-        DAY INT,
-        SESSION VARCHAR(50),
-        DATA LONGTEXT,
-        updated_at DATETIME)"""
+        create_table_sql = ('create table if not exists empty_classroom(\n'
+                            '        id int UNSIGNED primary key AUTO_INCREMENT,\n'
+                            '        date varchar(50),\n'
+                            '        WEEK INT,\n'
+                            '        DAY INT,\n'
+                            '        SESSION VARCHAR(50),\n'
+                            '        DATA LONGTEXT,\n'
+                            '        updated_at DATETIME)')
 
         try:
             cur.execute(del_table_sql)
@@ -170,8 +171,9 @@ class EmptyClassroomSpider:
                     data = self.get_empty_classroom(week, day, session_list.get(session))
                     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     sql = "insert into empty_classroom(date, week, day, session, data ,updated_at) " \
-                          "values ('%s', '%s', '%s', '%s', '%s', '%s')" % \
-                          (date.strftime('%Y-%m-%d'), week, day, session, json.dumps(data, ensure_ascii=False), now)
+                          "values ('{}', '{}', '{}', '{}', '{}', '{}')" \
+                        .format(date.strftime('%Y-%m-%d'), week, day, session, json.dumps(data, ensure_ascii=False),
+                                now)
                     try:
                         cur.execute(sql)
                         db.commit()
@@ -209,27 +211,32 @@ class EmptyClassroomSpider:
     def get_headers():
         headers = [
             {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36'
-                              ' (KHTML, like Gecko)'
-                              ' Chrome/63.0.3239.132 Safari/537.36'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.1 (KHTML, like Gecko)'
+                              ' Chrome/14.0.835.163 Safari/535.1'
             },
             {
-                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38'
-                              ' (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:6.0) Gecko/20100101 Firefox/6.0'
             },
             {
-                'User-Agent': 'Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36'
-                              ' (KHTML, like Gecko) Chrome/65.0.3325.162 Mobile Safari/537.36'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/534.50 (KHTML, like Gecko)'
+                              ' Version/5.1 Safari/534.50'
             },
             {
-                'User-Agent': 'Mozilla/5.0 (Linux; U; Android 5.1.1; zh-cn; MI 4S Build/LMY47V)'
-                              ' AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/53.0.2785.146 '
-                              'Mobile Safari/537.36 XiaoMi/MiuiBrowser/9.1.3'
+                'User-Agent': 'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; SLCC2;'
+                              ' .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0;'
+                              ' InfoPath.3; .NET4.0C; .NET4.0E)'
             },
             {
-                'User-Agent': 'Mozilla/5.0 (Linux; U; Android 6.0.1; zh-CN; SM-C7000 Build/MMB29M)'
-                              ' AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/40.0.2214.89 '
-                              'UCBrowser/11.6.2.948 Mobile Safari/537.36'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/535.1 (KHTML, like Gecko)'
+                              ' Chrome/13.0.782.41 Safari/535.1 QQBrowser/6.9.11079.201'
+            },
+            {
+                'User-Agent': 'Mozilla/5.0 (iPad; U; CPU OS 4_3_3 like Mac OS X; en-us)'
+                              ' AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8J2 Safari/6533.18.5'
+            },
+            {
+                'User-Agent': 'Mozilla/5.0 (BlackBerry; U; BlackBerry 9800; en) AppleWebKit/534.1+ (KHTML, like Gecko)'
+                              ' Version/6.0.0.337 Mobile Safari/534.1+'
             },
         ]
 
