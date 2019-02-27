@@ -238,6 +238,17 @@ class EmptyClassroomSpider:
                 'User-Agent': 'Mozilla/5.0 (BlackBerry; U; BlackBerry 9800; en) AppleWebKit/534.1+ (KHTML, like Gecko)'
                               ' Version/6.0.0.337 Mobile Safari/534.1+'
             },
+            {
+                'User-Agent': 'User-Agent:Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0;'
+            },
+            {
+                'User-Agent': 'Mozilla/5.0 (Linux; U; Android 2.3.7; en-us; Nexus One Build/FRF91)'
+                              ' AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1'
+            },
+            {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_8; en-us) AppleWebKit/534.50'
+                              ' (KHTML, like Gecko) Version/5.1 Safari/534.50 '
+            },
         ]
 
         return choice(headers)
