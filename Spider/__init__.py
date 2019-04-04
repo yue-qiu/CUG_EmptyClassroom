@@ -21,7 +21,8 @@ class EmptyClassroomSpider:
         self.start_week = int(account.get("start"))
         self.end_week = int(account.get("end"))
         self.login_url = "http://202.114.207.137:80/ssoserver/login?ywxt=jw"
-        self.login_classroom_system_url = "http://jwgl.cug.edu.cn/jwglxt/cdjy/cdjy_cxKxcdlb.html?gnmkdm=N2155&layout=default&su=20171000737"
+        self.login_classroom_system_url = "http://jwgl.cug.edu.cn/jwglxt/cdjy/cdjy_cxKxcdlb.html?gnmkdm=N2155&layout" \
+                                          "=default&su=20171000737 "
         self.get_empty_classroom_url = "http://jwgl.cug.edu.cn/jwglxt/cdjy/cdjy_cxKxcdlb.html?doType=query&gnmkdm=N2155"
         self.session = requests.session()
         self.host = db_config.get('host')
@@ -30,6 +31,7 @@ class EmptyClassroomSpider:
         self.db_database = db_config.get('database')
 
     def log_in(self):
+        global res
         key = b'neusofteducationplatform'
         iv = '01234567'
         k = triple_des(key, CBC, iv, pad=None, padmode=PAD_PKCS5)
@@ -44,7 +46,8 @@ class EmptyClassroomSpider:
                 'Connection': 'keep-alive',
                 'Accept-Encoding': 'gzip, deflate',
                 'Host': 'xyfw.cug.edu.cn',
-                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E302',
+                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, '
+                              'like Gecko) Mobile/15E302',
                 'Upgrade-Insecure-Requests': '1',
                 'Accept-Language': 'zh-cn',
                 'id_number': student_no_encrypt,
@@ -81,6 +84,7 @@ class EmptyClassroomSpider:
         return True
 
     def get_empty_classroom(self, week, day, session):
+        global r
         codes = {
             '北综楼': '13',
             '教三楼': '05',
@@ -105,7 +109,7 @@ class EmptyClassroomSpider:
                 exit(1)
 
             if '用户登录' in r.text:
-                logger.error("username or password error")
+                logger.error("未进行单点登录")
                 print('Failure. Please check logging.log')
                 exit(1)
 
@@ -116,6 +120,7 @@ class EmptyClassroomSpider:
         return result
 
     def run(self):
+        global db
         self.log_in()
         session_list = {
             '1, 2': '3',
@@ -140,14 +145,17 @@ class EmptyClassroomSpider:
 
         cur = db.cursor()
         del_table_sql = """drop table if exists empty_classroom"""
-        create_table_sql = ('create table if not exists empty_classroom(\n'
-                            '        id int UNSIGNED primary key AUTO_INCREMENT,\n'
-                            '        date varchar(50),\n'
-                            '        WEEK INT,\n'
-                            '        DAY INT,\n'
-                            '        SESSION VARCHAR(50),\n'
-                            '        DATA LONGTEXT,\n'
-                            '        updated_at DATETIME)')
+
+        create_table_sql = """
+        create table if not exists empty_classroom (
+        id int unsigned primary key auto_increment,
+        date date not null,
+        day int,
+        week int,
+        session varchar(50),
+        data longtext,
+        updated_at datetime)
+        """
 
         try:
             cur.execute(del_table_sql)
@@ -158,12 +166,13 @@ class EmptyClassroomSpider:
             exit(1)
 
         date = datetime.datetime.today()
-        for week in range(self.start_week, self.end_week+1):
+        for week in range(self.start_week, self.end_week + 1):
             if week == self.start_week:
                 days = date.weekday()
+                date = date + datetime.timedelta(days=-1)
             else:
-                days = -1
-            for day in range(days+1, 7):
+                days = 0
+            for day in range(days, 7):
                 date = date + datetime.timedelta(days=1)
                 for session in session_list:
                     # 降低速度防止被封
@@ -171,7 +180,7 @@ class EmptyClassroomSpider:
                     data = self.get_empty_classroom(week, day, session_list.get(session))
                     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     sql = "insert into empty_classroom(date, week, day, session, data ,updated_at) " \
-                          "values ('{}', '{}', '{}', '{}', '{}', '{}')" \
+                          "values (str_to_date('{}', '%Y-%m-%d'),'{}', '{}', '{}', '{}', '{}')" \
                         .format(date.strftime('%Y-%m-%d'), week, day, session, json.dumps(data, ensure_ascii=False),
                                 now)
                     try:
@@ -189,10 +198,10 @@ class EmptyClassroomSpider:
     def get_data(week, day, session, code):
         data = {
             'fwzt': 'cx',
-            'xqh_id': '1', # 学区
+            'xqh_id': '1',  # 学区
             'xnm': 2018,  # 学年
-            'xqm': 12, # 学期，上学期3， 下学期12
-            'zcd': pow(2, week-1),  # 周数, 2^(n-1)
+            'xqm': 12,  # 学期，上学期3， 下学期12
+            'zcd': pow(2, week - 1),  # 周数, 2^(n-1)
             'xqj': day,  # 星期。2表示星期二
             'jcd': session,  # 课程。第一节为1，第二节为2，第三节为4，第四节为8，第五节为16，以此类推。如3则代表1+2,即第一节与第二节
             'lh': code,
@@ -204,6 +213,7 @@ class EmptyClassroomSpider:
             'queryModel.sortName': 'cdbh',
             'queryModel.sortOrder': 'asc',
             'time': 1,
+            "cdlb_id": "006",
         }
         return data
 
