@@ -1,0 +1,6 @@
+/venv
+logging.log
+/__pycache__
+/.idea
+/Spider/__pycache__
+
