@@ -58,7 +58,7 @@ class EmptyClassroomSpider:
         self.session.headers.update(self.get_headers())
 
         try:
-            res = self.session.get(self.login_url)
+            res = self.session.get(self.login_url, timeout=1000)
         except Exception as e:
             logger.error(e)
             print('Failure. Please check logging.log')
@@ -75,7 +75,7 @@ class EmptyClassroomSpider:
             exit(1)
 
         try:
-            self.session.get(self.login_classroom_system_url)
+            self.session.get(self.login_classroom_system_url, timeout=1000)
         except Exception as e:
             logger.error(e)
             print('Failure. Please check logging.log')
@@ -102,7 +102,7 @@ class EmptyClassroomSpider:
 
             try:
                 self.session.headers.update(self.get_headers())
-                r = self.session.post(data=data, url=self.get_empty_classroom_url)
+                r = self.session.post(data=data, url=self.get_empty_classroom_url, timeout=1000)
             except Exception as e:
                 logger.error(e)
                 print('Failure. Please check logging.log')
@@ -123,12 +123,12 @@ class EmptyClassroomSpider:
         global db
         self.log_in()
         session_list = {
-            '1, 2': '3',
-            '3, 4': '12',
-            '5, 6': '48',
-            '7, 8': '192',
-            '9, 10': '768',
-            '11, 12': '3072',
+            '1,2': '3',
+            '3,4': '12',
+            '5,6': '48',
+            '7,8': '192',
+            '9,10': '768',
+            '11,12': '3072',
             '上午': '15',
             '下午': '240',
             '晚上': '3840',
