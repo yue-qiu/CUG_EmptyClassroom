@@ -6,7 +6,7 @@
 account 和 db_config 都位于 Spider.Config 模块
 
 默认不抓取当前天的信息
-account 包含中登录数字地大账号`username`，密码`password`，开始抓取周`start`，结束周`end`：
+account 包含中登录数字地大账号`username`，密码`password`，开始抓取周`start`，结束周`end`，起始周与结束周可以相同：
 
 ```angular2html
 account = {'username': 'xxxxxxxx', 'password': 'xxxxxxxx', 'start': 'x', 'end': 'xx'}
