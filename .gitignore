@@ -4,3 +4,4 @@ logging.log
 /.idea
 /Spider/Config.py
 /Spider/__pycache__
+Pipfile.lock

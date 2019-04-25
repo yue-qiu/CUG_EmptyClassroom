@@ -37,7 +37,7 @@ data：空教室信息
 update_at：更新时间
 ```
 
-完成配置后，执行:
+完成配置(见`./Spide/Config.py.example`文件)后，执行:
 
 ```shell
 python main.py
