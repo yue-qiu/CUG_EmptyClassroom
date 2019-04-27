@@ -2,7 +2,8 @@
 
 ## 配置
 爬虫主体 EmptyClassroomSpider 位于 Spider ，
-配置文件 Config.ini 位于 Config 包
+配置文件 Config.ini 位于 Config 包。
+已经给出 Config.ini.example，根据需要补全字段后更名为 Config.ini 即可使用
 
 
 account 含登录数字地大账号`username`，密码`password`
