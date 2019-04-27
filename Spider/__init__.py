@@ -179,14 +179,16 @@ class EmptyClassroomSpider:
                     time.sleep(0.5)
                     data = self.get_empty_classroom(week, day, session_list.get(session))
                     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    # sql = "insert into empty_classroom(date, week, day, session, data ,updated_at) " \
-                    #       "values (str_to_date('{}', '%Y-%m-%d'), {}, {}, '{}', '{}', '{}')" \
-                    #     .format(date.strftime('%Y-%m-%d'), week, day, session, str(data),
-                    #             now)
                     sql = """
                     insert into `empty_classroom`(`date`, `week`, `day`, `session`, `data`, `updated_at`) values 
-                    (str_to_date('{}', '{}'), {}, {}, '{}', "{}", '{}')
-                    """.format(date.strftime('%Y-%m-%d'), '%Y-%m-%d', week, day, session, str(data), now)
+                    (str_to_date('{}', '{}'), {}, {}, '{}', '{}', '{}')
+                    """.format(date.strftime('%Y-%m-%d'),
+                               '%Y-%m-%d',
+                               week,
+                               day,
+                               session,
+                               str(data).replace("\'", "\"", -1),
+                               now)
                     try:
                         cur.execute(sql)
                         db.commit()
