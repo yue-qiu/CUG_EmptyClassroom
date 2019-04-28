@@ -10,6 +10,11 @@ import pymysql
 import json
 from pyDes import triple_des, CBC, PAD_PKCS5
 
+logging.basicConfig(level=logging.ERROR,
+                    filename='logging.log',
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
 def __get_headers():
     headers = [
         {
