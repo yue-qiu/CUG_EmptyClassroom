@@ -1,6 +1,6 @@
 /venv
 logging.log
-/__pycache__
+__pycache__
 /.idea
-/Spider/Config.py
-/Spider/__pycache__
+/Config/Config.ini
+Pipfile.lock

@@ -1,0 +1,13 @@
+[db]
+host = xxxx
+username = xxxx
+password = xxxx
+database = xxxx
+
+[account]
+username = xxxx
+password = xxxx
+
+[week]
+start = xxxx
+end = xxxx

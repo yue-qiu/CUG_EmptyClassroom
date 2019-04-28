@@ -15,11 +15,11 @@ logger = logging.getLogger(__name__)
 
 
 class EmptyClassroomSpider:
-    def __init__(self, account, db_config):
+    def __init__(self, account, db_config, week):
         self.username = account.get("username")
         self.password = account.get("password")
-        self.start_week = int(account.get("start"))
-        self.end_week = int(account.get("end"))
+        self.start_week = int(week.get("start"))
+        self.end_week = int(week.get("end"))
         self.login_url = "http://202.114.207.137:80/ssoserver/login?ywxt=jw"
         self.login_classroom_system_url = "http://jwgl.cug.edu.cn/jwglxt/cdjy/cdjy_cxKxcdlb.html?gnmkdm=N2155&layout" \
                                           "=default&su=20171000737 "
@@ -176,13 +176,19 @@ class EmptyClassroomSpider:
                 date = date + datetime.timedelta(days=1)
                 for session in session_list:
                     # 降低速度防止被封
-                    time.sleep(1)
+                    time.sleep(0.5)
                     data = self.get_empty_classroom(week, day, session_list.get(session))
                     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    sql = "insert into empty_classroom(date, week, day, session, data ,updated_at) " \
-                          "values (str_to_date('{}', '%Y-%m-%d'),'{}', '{}', '{}', '{}', '{}')" \
-                        .format(date.strftime('%Y-%m-%d'), week, day, session, json.dumps(data, ensure_ascii=False),
-                                now)
+                    sql = """
+                    insert into `empty_classroom`(`date`, `week`, `day`, `session`, `data`, `updated_at`) values 
+                    (str_to_date('{}', '{}'), {}, {}, '{}', '{}', '{}')
+                    """.format(date.strftime('%Y-%m-%d'),
+                               '%Y-%m-%d',
+                               week,
+                               day,
+                               session,
+                               str(data).replace("\'", "\"", -1),
+                               now)
                     try:
                         cur.execute(sql)
                         db.commit()
