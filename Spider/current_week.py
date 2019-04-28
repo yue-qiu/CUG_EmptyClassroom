@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import requests
-import time
 import hashlib
 import logging
 from random import choice
-import datetime
-import pymysql
 import json
 from pyDes import triple_des, CBC, PAD_PKCS5
+
+logging.basicConfig(level=logging.ERROR,
+                    filename='logging.log',
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 def __get_headers():
     headers = [
@@ -55,6 +57,7 @@ def __get_headers():
 
     return choice(headers)
 
+
 def get_current_week(username, password):
     s = requests.session()
     key = b'neusofteducationplatform'
@@ -90,7 +93,7 @@ def get_current_week(username, password):
         exit(1)
 
     if '错误' in res.text and 'sfrz' in res.url:
-        logging.error("账号密码错误")
+        logger.error("账号密码错误")
         print('Failure. Please check logging.log')
         exit(1)
 
@@ -98,6 +101,6 @@ def get_current_week(username, password):
         logger.error("学校SSO系统故障")
         print('Failure. Please check logging.log')
         exit(1)
-    res=s.post('http://xyfw.cug.edu.cn/tp_up/up/calendar/getTeachWeekInfo', timeout=1000)
-    data=json.loads(res.text)
-    return data['ZC'] # str
+    res = s.post('http://xyfw.cug.edu.cn/tp_up/up/calendar/getTeachWeekInfo', timeout=1000)
+    data = json.loads(res.text)
+    return data['ZC']  # str

@@ -95,14 +95,14 @@ class EmptyClassroomSpider:
     def get_empty_classroom(self, week, day, session):
         global r
         codes = {
-            '北综楼': '13',
+            '综合楼': '13',
             '教三楼': '05',
             '教一楼': '06',
             '教二楼': '04',
             '东教楼': '15',
 
         }
-        buildings = ['北综楼', '教三楼', '教二楼', '教一楼', '东教楼']
+        buildings = ['综合楼', '教三楼', '教二楼', '教一楼', '东教楼']
 
         result = {}
         for building in buildings:

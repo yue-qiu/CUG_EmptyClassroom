@@ -8,8 +8,14 @@
 
 account 含登录数字地大账号`username`，密码`password`
 
-week 含开始抓取周`start`，结束周`end`，起始周与结束周可以相同，如果没有`start`与`end`字段则爬虫自行会爬取以当前周为起始结束周的数据
+week 含开始抓取周`start`，结束周`end`，起始周与结束周可以相同，
 
+`start` 与 `end` 不是必须的，如果没有`start`与`end`字段爬虫会爬取当前周的数据：
+```angular2
+# 没有 start 与 end 字段
+[week]
+
+```
 db 含主机地址`host`，账号`username`，密码`password`，数据库`database`
 
 
