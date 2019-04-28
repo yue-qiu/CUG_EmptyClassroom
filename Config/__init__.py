@@ -17,9 +17,13 @@ db_config = {'host': cfg.get('db', 'host'),
              'database': cfg.get('db', 'database'),
              }
 
-week = {'start': cfg.get('week', 'start'),
-        'end': cfg.get('week', 'end'),
+if cfg.has_option('week', 'start') and cfg.has_option('week', 'end'): # 存在字段则填充否则交由爬虫自己按当前周填充
+    start = cfg.get('week', 'start')
+    end = cfg.get('week', 'end')
+else:
+    start = None
+    end = None
+
+week = {'start': start,
+        'end': end,
         }
-
-
-

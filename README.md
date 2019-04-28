@@ -8,7 +8,7 @@
 
 account 含登录数字地大账号`username`，密码`password`
 
-week 含开始抓取周`start`，结束周`end`，起始周与结束周可以相同
+week 含开始抓取周`start`，结束周`end`，起始周与结束周可以相同，如果没有`start`与`end`字段则爬虫自行会爬取以当前周为起始结束周的数据
 
 db 含主机地址`host`，账号`username`，密码`password`，数据库`database`
 

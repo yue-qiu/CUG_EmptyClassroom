@@ -7,6 +7,7 @@ import datetime
 import pymysql
 import json
 from pyDes import triple_des, CBC, PAD_PKCS5
+from Spider import current_week
 
 logging.basicConfig(level=logging.ERROR,
                     filename='logging.log',
@@ -18,8 +19,16 @@ class EmptyClassroomSpider:
     def __init__(self, account, db_config, week):
         self.username = account.get("username")
         self.password = account.get("password")
-        self.start_week = int(week.get("start"))
-        self.end_week = int(week.get("end"))
+        self.start_week = week.get("start")
+        self.end_week = week.get("end")
+        if self.start_week is None or self.end_week is None:
+            self.start_week = int(current_week.get_current_week(self.username, self.password))
+            self.end_week = self.start_week
+        else:
+            self.start_week = int(week.get("start"))
+            self.end_week = int(week.get("end"))
+        print(self.start_week)
+        print(self.end_week)
         self.login_url = "http://202.114.207.137:80/ssoserver/login?ywxt=jw"
         self.login_classroom_system_url = "http://jwgl.cug.edu.cn/jwglxt/cdjy/cdjy_cxKxcdlb.html?gnmkdm=N2155&layout" \
                                           "=default&su=20171000737 "
