@@ -105,6 +105,7 @@ class EmptyClassroomSpider:
         buildings = ['综合楼', '教三楼', '教二楼', '教一楼', '东教楼']
 
         result = {}
+        # 对每栋楼进行抓取
         for building in buildings:
             result[building] = []
             data = EmptyClassroomSpider.get_data(week, day, session, codes.get(building))
@@ -122,9 +123,12 @@ class EmptyClassroomSpider:
                 print('Failure. Please check logging.log')
                 exit(1)
 
-            res = json.loads(r.text)
+            res = r.json()
             for item in res.get('items'):
-                result[building].append(item.get('cdmc').replace(building, ""))
+                if building != "综合楼":
+                    result[building].append(item.get('cdmc').replace(building, ""))
+                else:
+                    result[building].append(item.get('cdmc').replace("北综楼", ""))
 
         return result
 
