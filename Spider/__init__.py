@@ -190,7 +190,7 @@ class EmptyClassroomSpider:
                 for session in session_list:
                     # 降低速度防止被封
                     time.sleep(0.5)
-                    data = self.get_empty_classroom(week, day, session_list.get(session))
+                    data = self.get_empty_classroom(week, day+1, session_list.get(session))
                     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     sql = """
                     insert into `empty_classroom`(`date`, `week`, `day`, `session`, `data`, `updated_at`) values 
