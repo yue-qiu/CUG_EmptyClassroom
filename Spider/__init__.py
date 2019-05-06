@@ -4,15 +4,11 @@ import hashlib
 import logging
 from random import choice
 import datetime
-import pymysql
-import json
 from pyDes import triple_des, CBC, PAD_PKCS5
 from Spider import current_week
-
-logging.basicConfig(level=logging.ERROR,
-                    filename='logging.log',
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+from Log import logger
+import Modle
+import threading
 
 
 class EmptyClassroomSpider:
@@ -34,10 +30,20 @@ class EmptyClassroomSpider:
                                           "=default&su=20171000737 "
         self.get_empty_classroom_url = "http://jwgl.cug.edu.cn/jwglxt/cdjy/cdjy_cxKxcdlb.html?doType=query&gnmkdm=N2155"
         self.session = requests.session()
-        self.host = db_config.get('host')
-        self.db_username = db_config.get('username')
-        self.db_password = db_config.get('password')
-        self.db_database = db_config.get('database')
+        self.Lock = threading.Lock()
+        self.session_list = {
+                    '1,2': '3',
+                    '3,4': '12',
+                    '5,6': '48',
+                    '7,8': '192',
+                    '9,10': '768',
+                    '11,12': '3072',
+                    '上午': '15',
+                    '下午': '240',
+                    '晚上': '3840',
+                    '白天': '255',
+                    '整天': '4095',
+        }
 
     def log_in(self):
         global res
@@ -133,30 +139,11 @@ class EmptyClassroomSpider:
         return result
 
     def run(self):
-        global db
+        thread_pool = []
         self.log_in()
-        session_list = {
-            '1,2': '3',
-            '3,4': '12',
-            '5,6': '48',
-            '7,8': '192',
-            '9,10': '768',
-            '11,12': '3072',
-            '上午': '15',
-            '下午': '240',
-            '晚上': '3840',
-            '白天': '255',
-            '整天': '4095',
-        }
-
-        try:
-            db = pymysql.connect(self.host, self.db_username, self.db_password, self.db_database)
-        except Exception as e:
-            logger.error(e)
-            print('Failure. Please check logging.log')
-            exit(1)
-
+        db = Modle.get_db()
         cur = db.cursor()
+
         del_table_sql = """drop table if exists empty_classroom"""
 
         create_table_sql = """
@@ -179,6 +166,7 @@ class EmptyClassroomSpider:
             exit(1)
 
         date = datetime.datetime.today()
+        print("working... Just be patient~")
         for week in range(self.start_week, self.end_week + 1):
             if week == self.start_week:
                 days = date.weekday()
@@ -187,30 +175,15 @@ class EmptyClassroomSpider:
                 days = 0
             for day in range(days, 7):
                 date = date + datetime.timedelta(days=1)
-                for session in session_list:
+                for session in self.session_list:
                     # 降低速度防止被封
                     time.sleep(0.5)
-                    data = self.get_empty_classroom(week, day+1, session_list.get(session))
-                    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    sql = """
-                    insert into `empty_classroom`(`date`, `week`, `day`, `session`, `data`, `updated_at`) values 
-                    (str_to_date('{}', '{}'), {}, {}, '{}', '{}', '{}')
-                    """.format(date.strftime('%Y-%m-%d'),
-                               '%Y-%m-%d',
-                               week,
-                               day,
-                               session,
-                               str(data).replace("\'", "\"", -1),
-                               now)
-                    try:
-                        cur.execute(sql)
-                        db.commit()
-                    except Exception as e:
-                        logger.error(e)
-                        print('Failure. Please check logging.log')
-                        db.rollback()
-        cur.close()
-        db.close()
+                    th = threading.Thread(target=self._store_data, args=(week, day, date, session,))
+                    thread_pool.append(th)
+                    th.start()
+
+        for t in thread_pool:
+            t.join()
         print('Succeed!')
 
     @staticmethod
@@ -281,3 +254,39 @@ class EmptyClassroomSpider:
         ]
 
         return choice(headers)
+
+    def _store_data(self, week, day, date, session):
+        db = Modle.get_db()
+        if db is None:
+            print("Error, please check the log")
+            return
+
+        cur = db.cursor()
+        if cur is None:
+            print("Error, please check the log")
+            return
+
+        data = self.get_empty_classroom(week, day + 1, self.session_list.get(session))
+        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        sql = """
+           insert into `empty_classroom`(`date`, `week`, `day`, `session`, `data`, `updated_at`) values 
+           (str_to_date('{}', '{}'), {}, {}, '{}', '{}', '{}')
+           """.format(date.strftime('%Y-%m-%d'),
+                      '%Y-%m-%d',
+                      week,
+                      day,
+                      session,
+                      str(data).replace("\'", "\"", -1),
+                      now)
+
+        try:
+            with self.Lock:
+                cur.execute(sql)
+                db.commit()
+        except Exception as e:
+            logger.error(e)
+            print('Failure. Please check logging.log')
+            db.rollback()
+
+
