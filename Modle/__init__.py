@@ -12,14 +12,15 @@ def get_db():
 
     if conn is None:
         with lock:
-            try:
-                conn = pymysql.connect(db_config.get("host"),
-                                       db_config.get("username"),
-                                       db_config.get("password"),
-                                       db_config.get("database"))
-            except Exception as e:
-                logger.error("fail to connect to the database: {}".format(e))
-                return None
+            if conn is None:
+                try:
+                    conn = pymysql.connect(db_config.get("host"),
+                                           db_config.get("username"),
+                                           db_config.get("password"),
+                                           db_config.get("database"))
+                except Exception as e:
+                    logger.error("fail to connect to the database: {}".format(e))
+                    return None
     return conn
 
 
