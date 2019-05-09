@@ -9,20 +9,21 @@ from Spider import current_week
 from Log import logger
 import Modle
 import threading
+import Config
 
 
 class EmptyClassroomSpider:
-    def __init__(self, account, db_config, week):
-        self.username = account.get("username")
-        self.password = account.get("password")
-        self.start_week = week.get("start")
-        self.end_week = week.get("end")
+    def __init__(self):
+        self.username = Config.account.get("username")
+        self.password = Config.account.get("password")
+        self.start_week = Config.week.get("start")
+        self.end_week = Config.week.get("end")
         if self.start_week is None or self.end_week is None:
             self.start_week = int(current_week.get_current_week(self.username, self.password))
             self.end_week = self.start_week
         else:
-            self.start_week = int(week.get("start"))
-            self.end_week = int(week.get("end"))
+            self.start_week = int(self.start_week)
+            self.end_week = int(self.end_week)
         print(self.start_week)
         print(self.end_week)
         self.login_url = "http://202.114.207.137:80/ssoserver/login?ywxt=jw"
@@ -285,8 +286,8 @@ class EmptyClassroomSpider:
                 cur.execute(sql)
                 db.commit()
         except Exception as e:
-            logger.error(e)
-            print('Failure. Please check logging.log')
+            logger.error("{} (date: {}, session: {})".format(e, date, session))
+            print('A failure happened. Please check logging.log')
             db.rollback()
 
 
