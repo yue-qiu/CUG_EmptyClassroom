@@ -10,7 +10,7 @@ from Log import logger
 import Modle
 import threading
 import Config
-
+import traceback
 
 class EmptyClassroomSpider:
     def __init__(self):
@@ -76,12 +76,12 @@ class EmptyClassroomSpider:
         try:
             res = self.session.get(self.login_url, timeout=1000)
         except Exception as e:
-            logger.error(e)
+            logger.error(e, traceback.format_exc())
             print('Failure. Please check logging.log')
             exit(1)
 
         if '错误' in res.text and 'sfrz' in res.url:
-            logging.error("账号密码错误")
+            logging.error("{} 的账号密码错误".format(self.username))
             print('Failure. Please check logging.log')
             exit(1)
 
@@ -93,7 +93,7 @@ class EmptyClassroomSpider:
         try:
             self.session.get(self.login_classroom_system_url, timeout=1000)
         except Exception as e:
-            logger.error(e)
+            logger.error(e, traceback.format_exc())
             print('Failure. Please check logging.log')
             exit(1)
 
@@ -121,7 +121,7 @@ class EmptyClassroomSpider:
                 self.session.headers.update(self.get_headers())
                 r = self.session.post(data=data, url=self.get_empty_classroom_url, timeout=1000)
             except Exception as e:
-                logger.error(e)
+                logger.error(e, traceback.format_exc())
                 print('Failure. Please check logging.log')
                 exit(1)
 
@@ -162,7 +162,7 @@ class EmptyClassroomSpider:
             cur.execute(del_table_sql)
             cur.execute(create_table_sql)
         except Exception as e:
-            logger.error(e)
+            logger.error(e, traceback.format_exc())
             print('Failure. Please check logging.log')
             exit(1)
 
@@ -270,7 +270,7 @@ class EmptyClassroomSpider:
         data = self.get_empty_classroom(week, day + 1, self.session_list.get(session))
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        sql = """
+        insert_sql = """
            insert into `empty_classroom`(`date`, `week`, `day`, `session`, `data`, `updated_at`) values 
            (str_to_date('{}', '{}'), {}, {}, '{}', '{}', '{}')
            """.format(date.strftime('%Y-%m-%d'),
@@ -283,10 +283,10 @@ class EmptyClassroomSpider:
 
         try:
             with self.Lock:
-                cur.execute(sql)
+                cur.execute(insert_sql)
                 db.commit()
         except Exception as e:
-            logger.error("{} (date: {}, session: {})".format(e, date, session))
+            logger.error(e, traceback.format_exc())
             print('A failure happened. Please check logging.log')
             db.rollback()
 
