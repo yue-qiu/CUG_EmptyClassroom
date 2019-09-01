@@ -1,11 +1,11 @@
 import os
 import configparser
 
-__all__ = ['db_config', 'account', 'week']
+__all__ = ['db_config', 'account', 'week', 'basicInfo']
 
 
 cfg = configparser.ConfigParser()
-cfg.read(os.path.join('Config', 'Config.ini'))
+cfg.read(os.path.join('Config', 'Config.ini'), encoding="utf-8")
 
 account = {'username': cfg.get('account', 'username'),
            'password': cfg.get('account', 'password'),
@@ -17,7 +17,7 @@ db_config = {'host': cfg.get('db', 'host'),
              'database': cfg.get('db', 'database'),
              }
 
-if cfg.has_option('week', 'start') and cfg.has_option('week', 'end'): # 存在字段则填充否则交由爬虫自己按当前周填充
+if cfg.has_option('week', 'start') and cfg.has_option('week', 'end'):  # 存在字段则填充否则交由爬虫自己按当前周填充
     start = cfg.get('week', 'start')
     end = cfg.get('week', 'end')
 else:
@@ -27,3 +27,9 @@ else:
 week = {'start': start,
         'end': end,
         }
+
+basicInfo = {
+    "xqh_id": cfg.get("basicInfo", "xqh_id"),
+    "xqm": cfg.get("basicInfo", "xqm"),
+    "xnm": cfg.get("basicInfo", "xnm"),
+}

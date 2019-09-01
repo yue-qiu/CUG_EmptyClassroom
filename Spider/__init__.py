@@ -1,7 +1,6 @@
 import time
 import requests
 import hashlib
-import logging
 from random import choice
 import datetime
 from pyDes import triple_des, CBC, PAD_PKCS5
@@ -11,6 +10,8 @@ import Modle
 import threading
 import Config
 import traceback
+from fake_useragent import UserAgent
+
 
 class EmptyClassroomSpider:
     def __init__(self):
@@ -26,12 +27,13 @@ class EmptyClassroomSpider:
             self.end_week = int(self.end_week)
         print(self.start_week)
         print(self.end_week)
-        self.login_url = "http://202.114.207.137:80/ssoserver/login?ywxt=jw"
-        self.login_classroom_system_url = "http://jwgl.cug.edu.cn/jwglxt/cdjy/cdjy_cxKxcdlb.html?gnmkdm=N2155&layout" \
-                                          "=default&su=20171000737 "
-        self.get_empty_classroom_url = "http://jwgl.cug.edu.cn/jwglxt/cdjy/cdjy_cxKxcdlb.html?doType=query&gnmkdm=N2155"
+        self.login_url = "http://202.114.207.126/sso/driotlogin"
+        self.login_classroom_system_url = "http://202.114.207.126/jwglxt/cdjy/cdjy_cxKxcdlb.html?" \
+                                          "gnmkdm=N2155&layout=default&su=20171000737 "
+        self.get_empty_classroom_url = "http://202.114.207.126/jwglxt/cdjy/cdjy_cxKxcdlb.html?doType=query&gnmkdm=N2155"
         self.session = requests.session()
         self.Lock = threading.Lock()
+        self.UA = UserAgent()
         self.session_list = {
                     '1,2': '3',
                     '3,4': '12',
@@ -71,17 +73,17 @@ class EmptyClassroomSpider:
             }
         )
         # 伪装 UA
-        self.session.headers.update(self.get_headers())
+        self.session.headers.update({'User-Agent': str(self.UA.random)})
 
         try:
             res = self.session.get(self.login_url, timeout=1000)
         except Exception as e:
-            logger.error(e, traceback.format_exc())
+            logger.error(e, str(traceback.format_exc()))
             print('Failure. Please check logging.log')
             exit(1)
 
         if '错误' in res.text and 'sfrz' in res.url:
-            logging.error("{} 的账号密码错误".format(self.username))
+            logger.error("{} 的账号密码错误".format(self.username))
             print('Failure. Please check logging.log')
             exit(1)
 
@@ -93,7 +95,7 @@ class EmptyClassroomSpider:
         try:
             self.session.get(self.login_classroom_system_url, timeout=1000)
         except Exception as e:
-            logger.error(e, traceback.format_exc())
+            logger.error(e, str(traceback.format_exc()))
             print('Failure. Please check logging.log')
             exit(1)
 
@@ -107,21 +109,25 @@ class EmptyClassroomSpider:
             '教一楼': '06',
             '教二楼': '04',
             '东教楼': '15',
+            '公共教学楼二': '22',
+            '公共教学楼一': '21',
 
         }
-        buildings = ['综合楼', '教三楼', '教二楼', '教一楼', '东教楼']
+        old_campus_buildings = ['综合楼', '教三楼', '教二楼', '教一楼', '东教楼']
+        new_campus_buildings = ['公共教学楼一', '公共教学楼二']
 
         result = {}
+        buildings = (old_campus_buildings if Config.basicInfo.get("xqh_id") == '1' else new_campus_buildings)
         # 对每栋楼进行抓取
         for building in buildings:
             result[building] = []
             data = EmptyClassroomSpider.get_data(week, day, session, codes.get(building))
 
             try:
-                self.session.headers.update(self.get_headers())
+                self.session.headers.update({'User-Agent': str(self.UA.random)})
                 r = self.session.post(data=data, url=self.get_empty_classroom_url, timeout=1000)
             except Exception as e:
-                logger.error(e, traceback.format_exc())
+                logger.error(e, str(traceback.format_exc()))
                 print('Failure. Please check logging.log')
                 exit(1)
 
@@ -133,7 +139,8 @@ class EmptyClassroomSpider:
             res = r.json()
             for item in res.get('items'):
                 if building != "综合楼":
-                    result[building].append(item.get('cdmc').replace(building, ""))
+                    result[building].append(
+                        item.get('cdmc').replace(building, "").replace('公教1-', "").replace('公教2-', ""))
                 else:
                     result[building].append(item.get('cdmc').replace("北综楼", ""))
 
@@ -145,12 +152,13 @@ class EmptyClassroomSpider:
         db = Modle.get_db()
         cur = db.cursor()
 
-        del_table_sql = """drop table if exists empty_classroom"""
+        # del_table_sql = """drop table if exists empty_classroom"""
 
         create_table_sql = """
         create table if not exists empty_classroom (
         id int unsigned primary key auto_increment,
         date date not null,
+        campus tinyint not null ,
         day int,
         week int,
         session varchar(50),
@@ -159,14 +167,14 @@ class EmptyClassroomSpider:
         """
 
         try:
-            cur.execute(del_table_sql)
+            # cur.execute(del_table_sql)
             cur.execute(create_table_sql)
         except Exception as e:
-            logger.error(e, traceback.format_exc())
+            logger.error(e, str(traceback.format_exc()))
             print('Failure. Please check logging.log')
             exit(1)
 
-        date = datetime.datetime.today()
+        date = datetime.datetime.today() + datetime.timedelta(days=1)
         print("working... Just be patient~")
         for week in range(self.start_week, self.end_week + 1):
             if week == self.start_week:
@@ -191,9 +199,9 @@ class EmptyClassroomSpider:
     def get_data(week, day, session, code):
         data = {
             'fwzt': 'cx',
-            'xqh_id': '1',  # 学区
-            'xnm': 2018,  # 学年
-            'xqm': 12,  # 学期，上学期3， 下学期12
+            'xqh_id': Config.basicInfo.get("xqh_id"),
+            'xnm': Config.basicInfo.get("xnm"),  # 学年
+            'xqm': Config.basicInfo.get("xqm"),  # 学期，上学期3， 下学期12
             'zcd': pow(2, week - 1),  # 周数, 2^(n-1)
             'xqj': day,  # 星期。2表示星期二
             'jcd': session,  # 课程。第一节为1，第二节为2，第三节为4，第四节为8，第五节为16，以此类推。如3则代表1+2,即第一节与第二节
@@ -210,52 +218,6 @@ class EmptyClassroomSpider:
         }
         return data
 
-    @staticmethod
-    def get_headers():
-        headers = [
-            {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.1 (KHTML, like Gecko)'
-                              ' Chrome/14.0.835.163 Safari/535.1'
-            },
-            {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:6.0) Gecko/20100101 Firefox/6.0'
-            },
-            {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/534.50 (KHTML, like Gecko)'
-                              ' Version/5.1 Safari/534.50'
-            },
-            {
-                'User-Agent': 'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; SLCC2;'
-                              ' .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0;'
-                              ' InfoPath.3; .NET4.0C; .NET4.0E)'
-            },
-            {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/535.1 (KHTML, like Gecko)'
-                              ' Chrome/13.0.782.41 Safari/535.1 QQBrowser/6.9.11079.201'
-            },
-            {
-                'User-Agent': 'Mozilla/5.0 (iPad; U; CPU OS 4_3_3 like Mac OS X; en-us)'
-                              ' AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8J2 Safari/6533.18.5'
-            },
-            {
-                'User-Agent': 'Mozilla/5.0 (BlackBerry; U; BlackBerry 9800; en) AppleWebKit/534.1+ (KHTML, like Gecko)'
-                              ' Version/6.0.0.337 Mobile Safari/534.1+'
-            },
-            {
-                'User-Agent': 'User-Agent:Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0;'
-            },
-            {
-                'User-Agent': 'Mozilla/5.0 (Linux; U; Android 2.3.7; en-us; Nexus One Build/FRF91)'
-                              ' AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1'
-            },
-            {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_8; en-us) AppleWebKit/534.50'
-                              ' (KHTML, like Gecko) Version/5.1 Safari/534.50 '
-            },
-        ]
-
-        return choice(headers)
-
     def _store_data(self, week, day, date, session):
         db = Modle.get_db()
         if db is None:
@@ -271,22 +233,23 @@ class EmptyClassroomSpider:
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         insert_sql = """
-           insert into `empty_classroom`(`date`, `week`, `day`, `session`, `data`, `updated_at`) values 
-           (str_to_date('{}', '{}'), {}, {}, '{}', '{}', '{}')
+           insert into `empty_classroom`(`date`, `week`, `day`, `session`, `data`, `updated_at`, `campus`) values 
+           (str_to_date('{}', '{}'), {}, {}, '{}', '{}', '{}', '{}')
            """.format(date.strftime('%Y-%m-%d'),
                       '%Y-%m-%d',
                       week,
                       day,
                       session,
                       str(data).replace("\'", "\"", -1),
-                      now)
+                      now,
+                      Config.basicInfo.get("xqh_id"))
 
         try:
             with self.Lock:
                 cur.execute(insert_sql)
                 db.commit()
         except Exception as e:
-            logger.error(e, traceback.format_exc())
+            logger.error(e)
             print('A failure happened. Please check logging.log')
             db.rollback()
 
