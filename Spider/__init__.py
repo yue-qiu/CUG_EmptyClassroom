@@ -1,7 +1,7 @@
 import time
 import requests
 import hashlib
-from random import choice
+from random import randint
 import datetime
 from pyDes import triple_des, CBC, PAD_PKCS5
 from Spider import current_week
@@ -32,8 +32,8 @@ class EmptyClassroomSpider:
                                           "gnmkdm=N2155&layout=default&su=20171000737 "
         self.get_empty_classroom_url = "http://202.114.207.126/jwglxt/cdjy/cdjy_cxKxcdlb.html?doType=query&gnmkdm=N2155"
         self.session = requests.session()
-        self.Lock = threading.Lock()
         self.UA = UserAgent()
+        self.Lock = threading.Lock()
         self.session_list = {
                     '1,2': '3',
                     '3,4': '12',
@@ -64,17 +64,13 @@ class EmptyClassroomSpider:
                 'Connection': 'keep-alive',
                 'Accept-Encoding': 'gzip, deflate',
                 'Host': 'xyfw.cug.edu.cn',
-                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 11_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, '
-                              'like Gecko) Mobile/15E302',
+                'User-Agent': str(self.UA.random),
                 'Upgrade-Insecure-Requests': '1',
                 'Accept-Language': 'zh-cn',
                 'id_number': student_no_encrypt,
                 'enp': password_encrypt
             }
         )
-        # 伪装 UA
-        self.session.headers.update({'User-Agent': str(self.UA.random)})
-
         try:
             res = self.session.get(self.login_url, timeout=1000)
         except Exception as e:
@@ -124,12 +120,14 @@ class EmptyClassroomSpider:
             data = EmptyClassroomSpider.get_data(week, day, session, codes.get(building))
 
             try:
-                self.session.headers.update({'User-Agent': str(self.UA.random)})
-                r = self.session.post(data=data, url=self.get_empty_classroom_url, timeout=1000)
+                self.session.headers.update({'User-Agent': str(self.UA.random),
+                                             'Accept-Language': 'zh-CN,zh;q=0.9'})
+                r = self.session.post(data=data, url=self.get_empty_classroom_url, timeout=100)
             except Exception as e:
                 logger.error(e, str(traceback.format_exc()))
                 print('Failure. Please check logging.log')
-                exit(1)
+                # exit(1)
+                r = self.session.post(data=data, url=self.get_empty_classroom_url, timeout=100)
 
             if '用户登录' in r.text:
                 logger.error("未进行单点登录")
@@ -185,15 +183,15 @@ class EmptyClassroomSpider:
             for day in range(days, 7):
                 date = date + datetime.timedelta(days=1)
                 for session in self.session_list:
-                    # 降低速度防止被封
-                    time.sleep(0.5)
                     th = threading.Thread(target=self._store_data, args=(week, day, date, session,))
                     thread_pool.append(th)
+                    # 降低速度防止被封
+                    time.sleep(1)
                     th.start()
 
         for t in thread_pool:
             t.join()
-        print('Succeed!')
+        print('Complete!')
 
     @staticmethod
     def get_data(week, day, session, code):
@@ -213,7 +211,7 @@ class EmptyClassroomSpider:
             'queryModel.currentPage': 1,
             'queryModel.sortName': 'cdbh',
             'queryModel.sortOrder': 'asc',
-            'time': 1,
+            'time': randint(1, 10),
             "cdlb_id": "006",
         }
         return data
@@ -248,6 +246,7 @@ class EmptyClassroomSpider:
             with self.Lock:
                 cur.execute(insert_sql)
                 db.commit()
+                print("{} {}, {} 校区的数据已被插入".format(date.strftime('%Y-%m-%d'), session, Config.basicInfo.get("xqh_id")))
         except Exception as e:
             logger.error(e)
             print('A failure happened. Please check logging.log')
