@@ -22,17 +22,6 @@ week 含开始抓取周`start`，结束周`end`，起始周与结束周可以相
 ```
 db 含主机地址`host`，账号`username`，密码`password`，数据库`database`
 
-
-## 依赖管理
-使用 `pipenv` 作为包管理。安装方法：
-```shell script
-pip install pipenv
-```
-创建虚拟环境同时安装依赖：
-```shell script
-pipenv install
-```
-
 ## 运行结果
 爬取所得数据位于 empty_classroom 表中：
 
