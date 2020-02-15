@@ -220,12 +220,12 @@ class EmptyClassroomSpider:
         db = Modle.get_db()
         if db is None:
             print("Error, please check the log")
-            return
+            exit(1)
 
         cur = db.cursor()
         if cur is None:
             print("Error, please check the log")
-            return
+            exit(1)
 
         data = self.get_empty_classroom(week, day + 1, self.session_list.get(session))
         now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

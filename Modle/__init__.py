@@ -20,7 +20,7 @@ def get_db():
                                            db_config.get("database"))
                 except Exception as e:
                     logger.error("fail to connect to the database: {}".format(e))
-                    return None
+                    exit(1)
     return conn
 
 
